@@ -96,8 +96,8 @@
       <nav class="navbar navbar-dark bg-dark justify-content-between">
         <a class="navbar-brand">Gera Bandeira</a>
         <div>
-          <a class="ico ico__share mr-1" href="#" data-share title="Compartilhe a imagem com seus amigos">Compartilhe a imagem com seus amigos</a>
-          <a class="ico ico_github mr-2" href="https://github.com/rhamses/gera-bandeira" target="_blank" data-share title="Conheça o repositório do projeto">Conheça o repositório do projeto</a>
+          <a class="ico ico__share mr-1" data-share title="Compartilhe a imagem com seus amigos">Compartilhe a imagem com seus amigos</a>
+          <a class="ico ico_github mr-2" href="https://github.com/rhamses/gera-bandeira" target="_blank" title="Conheça o repositório do projeto">Conheça o repositório do projeto</a>
           <a class="ico ico__amb1" href="https://blog.rhams.es" target="_blank" title="Conheça Amb1.io">Feito orgulhasamente pela Ambiente1</a>
         </div>
       </nav>
@@ -282,6 +282,19 @@
       </div>
     </section>
 
+    <script>
+      if (location.search) {
+        const textPath = document.querySelector("textPath");
+        const text = new URLSearchParams(location.search);
+        const txtSlogan = document.querySelector("#txtSlogan");
+
+        if (text.get("lema")) {
+          txtSlogan.value = text.get("lema");
+          textPath.textContent = text.get("lema");
+        }
+      }
+    </script>
+
     <script id="rendered-js">
       //
       // VARIABLES
@@ -348,13 +361,15 @@
           // Create Image to show
           //
           const imgToShow = document.createElement("img");
+          const canvasImg = canvas.toDataURL("image/png");
           imgToShow.id = "bandeiraImg";
           imgToShow.width = width;
           imgToShow.height = height;
-          imgToShow.setAttribute("src", canvas.toDataURL("image/png"));
+          imgToShow.setAttribute("src", canvasImg);
           //
           // Write files to the page
           //
+          document.querySelector('[property="og:image"]').content = canvasImg;
           if (document.querySelector(".bandeira img")) {
             document.querySelector(".bandeira img").remove();
           }
@@ -367,14 +382,17 @@
       const shareBtns = document.querySelectorAll("[data-share]");
       shareBtns.forEach(item => {
         item.addEventListener('click', function(){
+          const lemaTxt = document.querySelector('#txtSlogan').value;
+          const lemaEncoded = encodeURIComponent(lemaTxt);
+          const lemaTag = lemaTxt.split(" ");
           navigator.share({
             title: 'Gera Bandeira',
             text: 'Gere o seu próprio lema da Bandeira do Brasil',
-            url: location.href,
+            url: location.origin + '/?lema=' + lemaEncoded,
 
             // extra, optional options
             // fbId: '123456789123456',
-            // hashtags: ['javascript', 'shareAPI', 'Polyfill']
+            hashtags: lemaTag
           })
           .then( _ => console.log('Yay, you shared it :)'))
           .catch( error => console.log('Oh noh! You couldn\'t share it! :\'(\n', error));
