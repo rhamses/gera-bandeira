@@ -106,15 +106,6 @@
       <div class="container">
         <div class="columns">
           <div class="column">
-            <div class="notification is-success is-light hide">
-              <p class="alert alert-warning">
-                Ao gerar a imagem, ele ficará salvo no seu ctrl+c para ficar
-                fácil colar por aí ;)
-                <br />
-                Mas se quiser, salve a imagem abaixo na sua biblioteca de
-                imagens para compartilhar por aí.
-              </p>
-            </div>
             <div class="form-group">
               <label for="txtSlogan" class="h6">Digita um novo lema para a bandeira e baixe ou compartilhe a imagem</label>
               <input
@@ -280,7 +271,12 @@
             </div>
             <p class="aviso"></p>
             <div class="bandeira text-center"></div>
-            <button class="btn btn-link btn-block mt-5 text-center" data-share>Compartilhar</button>
+            <div class="notification alert alert-warning hide mt-5">
+              <p>
+                Ao gerar o novo lema, salve a imagem diretamente na sua biblioteca, clicando com o botão direito ou segurando o dedo em cima da imagem.😄
+              </p>
+            </div>
+            <button class="btn btn-link btn-block mt-5 mb-5 text-center" data-share>Compartilhar</button>
           </div>
         </div>
       </div>
@@ -309,12 +305,12 @@
       genImage();
 
       txtSlogan.addEventListener("keyup", function () {
-        // if (this.value.length > 0) {
-        //   document.querySelector(".notification").classList.remove("hide");
-        //   textPath.textContent = "Ordem e Progresso";
-        // } else {
-        //   document.querySelector(".notification").classList.add("hide");
-        // }
+        if (this.value.length > 0) {
+          document.querySelector(".notification").classList.remove("hide");
+          textPath.textContent = "Ordem e Progresso";
+        } else {
+          document.querySelector(".notification").classList.add("hide");
+        }
         textPath.textContent = this.value
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
@@ -372,13 +368,13 @@
       shareBtns.forEach(item => {
         item.addEventListener('click', function(){
           navigator.share({
-            title: 'Web Share API Polyfill',
-            text: 'A polyfill for the Share API. Use it to share in both desktops and mobile devices.',
+            title: 'Gera Bandeira',
+            text: 'Gere o seu próprio lema da Bandeira do Brasil',
             url: location.href,
 
             // extra, optional options
-            fbId: '123456789123456',
-            hashtags: ['javascript', 'shareAPI', 'Polyfill']
+            // fbId: '123456789123456',
+            // hashtags: ['javascript', 'shareAPI', 'Polyfill']
           })
           .then( _ => console.log('Yay, you shared it :)'))
           .catch( error => console.log('Oh noh! You couldn\'t share it! :\'(\n', error));
