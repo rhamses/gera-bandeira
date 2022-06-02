@@ -8,10 +8,10 @@ const {TwitterApi} = require("twitter-api-v2");
 const fs = require("fs");
 
 const TwitterClient = new TwitterApi({
-  appKey: process.env.CONSUMER_KEY,
-  appSecret: process.env.CONSUMER_SECRET,
-  accessToken: process.env.ACCESS_TOKEN_KEY,
-  accessSecret: process.env.ACCESS_TOKEN_SECRET,
+  appKey: "VZEKizlIR2Rk5y5LxLHsxwqD5",
+  appSecret: "tlxPjBOKxHjf26xrKoXjTefD3ZnFDzvUj6GMwA37dh7fzrZ1hT",
+  accessToken: "1414756467438231553-xspCkIIHjRmoZ7krvvHB30IbUCyTez",
+  accessSecret: "ULQaleSbhOLewdeJkrQTruPm7P9y4oVLxRplOTY8WEY0T",
 });
 
 /**
@@ -26,10 +26,11 @@ const TwitterClient = new TwitterApi({
 function getPhrase(Phrase) {
   try {
     const rules = {
-      allCaps: new RegExp("(\\b[A-Z]+.\\b)", "gm"),
+      allCaps: new RegExp("([A-Z]+)", "gm"),
       quoted: new RegExp("(\".*?\")", "gmi"),
     };
-    if (Phrase.match(rules.allCaps)) {
+    if (Phrase.match(rules.allCaps) &&
+    Phrase.match(rules.allCaps)[0].split("").length > 3) {
       Phrase = Phrase.match(rules.allCaps).join("");
     } else if (Phrase.match(rules.quoted)) {
       Phrase = Phrase.match(rules.quoted)[0].replaceAll("\"", "")
@@ -145,6 +146,13 @@ async function postaBandeira(tweet) {
     return null;
   }
 }
+exports.geraBandeira = functions
+    .region("southamerica-east1")
+    .https.onRequest(async function(request, response) {
+      const text = getPhrase(request.body.text);
+      const image = await createFlag(text);
+      response.send(`<img src="data:image/png;base64,${image.toString("base64")}">`);
+    });
 exports.processaTask = functions
     .region("southamerica-east1")
     .https.onRequest(async function(request, response) {
