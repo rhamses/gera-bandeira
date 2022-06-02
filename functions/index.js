@@ -8,10 +8,10 @@ const {TwitterApi} = require("twitter-api-v2");
 const fs = require("fs");
 
 const TwitterClient = new TwitterApi({
-  appKey: "VZEKizlIR2Rk5y5LxLHsxwqD5",
-  appSecret: "tlxPjBOKxHjf26xrKoXjTefD3ZnFDzvUj6GMwA37dh7fzrZ1hT",
-  accessToken: "1414756467438231553-xspCkIIHjRmoZ7krvvHB30IbUCyTez",
-  accessSecret: "ULQaleSbhOLewdeJkrQTruPm7P9y4oVLxRplOTY8WEY0T",
+  appKey: "",
+  appSecret: "",
+  accessToken: "",
+  accessSecret: "",
 });
 
 /**
