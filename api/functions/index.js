@@ -8,10 +8,10 @@ const {TwitterApi} = require("twitter-api-v2");
 const fs = require("fs");
 
 const TwitterClient = new TwitterApi({
-  appKey: "",
-  appSecret: "",
-  accessToken: "",
-  accessSecret: "",
+  appKey: "VZEKizlIR2Rk5y5LxLHsxwqD5",
+  appSecret: "tlxPjBOKxHjf26xrKoXjTefD3ZnFDzvUj6GMwA37dh7fzrZ1hT",
+  accessToken: "1414756467438231553-xspCkIIHjRmoZ7krvvHB30IbUCyTez",
+  accessSecret: "ULQaleSbhOLewdeJkrQTruPm7P9y4oVLxRplOTY8WEY0T",
 });
 
 /**
@@ -151,7 +151,8 @@ exports.geraBandeira = functions
     .https.onRequest(async function(request, response) {
       const text = getPhrase(request.body.text);
       const image = await createFlag(text);
-      response.send(`<img src="data:image/png;base64,${image.toString("base64")}">`);
+      const path = `data:image/png;base64,${image.toString("base64")}`;
+      response.send(`<img src="${path}">`);
     });
 exports.processaTask = functions
     .region("southamerica-east1")
