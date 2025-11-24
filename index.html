@@ -19,6 +19,7 @@
       content="https://amb1.io/gerabandeira/ordem-progresso.png"
     />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Gera Bandeira</title>
     <script src="//unpkg.com/alpinejs" defer></script>
     <script
@@ -61,29 +62,47 @@
         return clone;
       }
 
+      const EXPORT_WIDTH = 1200;
+
+      function getExportDimensions(svg) {
+        const viewBox = svg.viewBox?.baseVal;
+        if (viewBox && viewBox.width && viewBox.height) {
+          const aspect = viewBox.height / viewBox.width;
+          return {
+            width: EXPORT_WIDTH,
+            height: Math.round(EXPORT_WIDTH * aspect),
+          };
+        }
+        return { width: EXPORT_WIDTH, height: 600 };
+      }
+
       function buildSvgDataUrl() {
         const svg = document.querySelector("#bandeira");
+        const { width, height } = getExportDimensions(svg);
         const styledSvg = inlineSvgStyles(svg);
-        styledSvg.setAttribute("width", "1200");
-        styledSvg.setAttribute("height", "600");
-        styledSvg.setAttribute("preserveAspectRatio", "xMidYMid slice");
+        styledSvg.setAttribute("width", width);
+        styledSvg.setAttribute("height", height);
+        styledSvg.setAttribute("preserveAspectRatio", "xMidYMid meet");
         const xml = new XMLSerializer().serializeToString(styledSvg);
         const encoded = btoa(unescape(encodeURIComponent(xml)));
-        return `data:image/svg+xml;base64,${encoded}`;
+        return {
+          dataUrl: `data:image/svg+xml;base64,${encoded}`,
+          width,
+          height,
+        };
       }
 
       function renderFlagToDataUrl() {
         return new Promise((resolve, reject) => {
           try {
-            const width = 1200;
-            const height = 600;
+            const { dataUrl, width, height } = buildSvgDataUrl();
             const canvas = document.createElement("canvas");
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext("2d");
 
             const img = document.createElement("img");
-            img.setAttribute("src", buildSvgDataUrl());
+            img.setAttribute("src", dataUrl);
             img.width = width;
             img.height = height;
 
