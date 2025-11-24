@@ -64,6 +64,9 @@
       function buildSvgDataUrl() {
         const svg = document.querySelector("#bandeira");
         const styledSvg = inlineSvgStyles(svg);
+        styledSvg.setAttribute("width", "1200");
+        styledSvg.setAttribute("height", "600");
+        styledSvg.setAttribute("preserveAspectRatio", "xMidYMid slice");
         const xml = new XMLSerializer().serializeToString(styledSvg);
         const encoded = btoa(unescape(encodeURIComponent(xml)));
         return `data:image/svg+xml;base64,${encoded}`;
@@ -95,6 +98,18 @@
             reject(error);
           }
         });
+      }
+
+      function dataUrlToBlob(dataUrl) {
+        const parts = dataUrl.split(",");
+        const mime = parts[0].match(/:(.*?);/)[1];
+        const binary = atob(parts[1]);
+        const len = binary.length;
+        const buffer = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          buffer[i] = binary.charCodeAt(i);
+        }
+        return new Blob([buffer], { type: mime });
       }
 
       async function genImage() {
@@ -137,8 +152,43 @@
         return payload.imageUrl;
       }
 
+      async function copyFlag(button) {
+        const copyBtn =
+          button || document.querySelector("[data-action='copy']");
+        if (copyBtn) {
+          copyBtn.disabled = true;
+        }
+
+        try {
+          const canvasImg = await renderFlagToDataUrl();
+          const blob = dataUrlToBlob(canvasImg);
+
+          if (navigator.clipboard && window.ClipboardItem) {
+            await navigator.clipboard.write([
+              new ClipboardItem({ "image/png": blob }),
+            ]);
+          } else {
+            const link = document.createElement("a");
+            link.href = canvasImg;
+            link.download = "bandeira.png";
+            link.click();
+            alert("Copiar imagem não é suportado; baixei o arquivo para você.");
+          }
+        } catch (error) {
+          console.error("Erro ao copiar", error);
+          alert(
+            "Não foi possível copiar agora. Verifique o console para detalhes."
+          );
+        } finally {
+          if (copyBtn) {
+            copyBtn.disabled = false;
+          }
+        }
+      }
+
       async function shareFlag(button) {
-        const shareBtn = button || document.querySelector("[data-action='share']");
+        const shareBtn =
+          button || document.querySelector("[data-action='share']");
         if (shareBtn) {
           shareBtn.disabled = true;
         }
@@ -163,7 +213,9 @@
           }
         } catch (error) {
           console.error("Erro ao compartilhar", error);
-          alert("Não foi possível compartilhar agora. Verifique o console para detalhes.");
+          alert(
+            "Não foi possível compartilhar agora. Verifique o console para detalhes."
+          );
         } finally {
           if (shareBtn) {
             shareBtn.disabled = false;
@@ -173,8 +225,12 @@
 
       document.addEventListener("DOMContentLoaded", () => {
         const shareBtn = document.querySelector("[data-action='share']");
+        const copyBtn = document.querySelector("[data-action='copy']");
         if (shareBtn) {
           shareBtn.addEventListener("click", () => shareFlag(shareBtn));
+        }
+        if (copyBtn) {
+          copyBtn.addEventListener("click", () => copyFlag(copyBtn));
         }
       });
     </script>
@@ -282,6 +338,10 @@
         width: auto;
       }
 
+      .has-hover:hover span {
+        width: 180px;
+      }
+
       .button--reset {
         border: none;
         background-color: transparent;
@@ -367,7 +427,16 @@
         <img src="edit.svg" alt="edita texto" width="50" height="50" />
         <span>Editar</span>
       </button>
-      <button class="button--item" data-share data-action="share" type="button">
+      <button class="button--item has-hover" data-action="copy" type="button">
+        <img src="copy.svg" alt="copiar imagem" width="50" height="50" />
+        <span>Copiar Imagem</span>
+      </button>
+      <button
+        class="button--item has-hover"
+        data-share
+        data-action="share"
+        type="button"
+      >
         <img src="share.svg" alt="compartilhar" width="50" height="50" />
         <span>Compartilhar</span>
       </button>
