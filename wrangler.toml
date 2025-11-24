@@ -1,0 +1,8 @@
+name = "gera-bandeira"
+main = "./functions/api/upload-image.js"
+compatibility_date = "2024-05-25"
+
+[[r2_buckets]]
+binding = "BANDEIRAS"
+bucket_name = "gera-bandeira"
+preview_bucket_name = "gera-bandeira-preview"

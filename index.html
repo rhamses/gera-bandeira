@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <meta
+      property="og:title"
+      content="Gere o seu próprio lema da Bandeira do Brasil"
+    />
+    <meta property="og:site_name" content="Gera Bandeira" />
+    <meta property="og:url" content="https://amb1.io/gerabandeira" />
+    <meta property="og:description" content="Gere sua bandeira do Brasil" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:image"
+      content="https://amb1.io/gerabandeira/ordem-progresso.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <title>Gera Bandeira</title>
+    <script src="//unpkg.com/alpinejs" defer></script>
+    <script
+      src="https://unpkg.com/share-api-polyfill/dist/share-min.js"
+      async
+    ></script>
+    <script type="module">
+      function inlineSvgStyles(svg) {
+        const clone = svg.cloneNode(true);
+        const targets = [
+          { selector: "#bandeiraFundo", props: ["fill"] },
+          { selector: "#bandeiraTrapezio", props: ["fill"] },
+          { selector: "#bandeiraCeu", props: ["fill"] },
+          { selector: ".bandeira--estrela", props: ["fill"], multiple: true },
+          {
+            selector: "#bandeiraSlogan",
+            props: [
+              "fill",
+              "font-family",
+              "font-size",
+              "font-weight",
+              "font-variant",
+              "letter-spacing",
+              "text-transform",
+            ],
+          },
+        ];
+
+        targets.forEach(({ selector, props }) => {
+          const originals = svg.querySelectorAll(selector);
+          const clones = clone.querySelectorAll(selector);
+          originals.forEach((node, idx) => {
+            const style = getComputedStyle(node);
+            props.forEach((prop) => {
+              clones[idx].setAttribute(prop, style.getPropertyValue(prop));
+            });
+          });
+        });
+
+        return clone;
+      }
+
+      function buildSvgDataUrl() {
+        const svg = document.querySelector("#bandeira");
+        const styledSvg = inlineSvgStyles(svg);
+        const xml = new XMLSerializer().serializeToString(styledSvg);
+        const encoded = btoa(unescape(encodeURIComponent(xml)));
+        return `data:image/svg+xml;base64,${encoded}`;
+      }
+
+      function renderFlagToDataUrl() {
+        return new Promise((resolve, reject) => {
+          try {
+            const width = 1200;
+            const height = 600;
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+
+            const img = document.createElement("img");
+            img.setAttribute("src", buildSvgDataUrl());
+            img.width = width;
+            img.height = height;
+
+            img.onload = function () {
+              ctx.drawImage(img, 0, 0, width, height);
+              const canvasImg = canvas.toDataURL("image/png");
+              resolve(canvasImg);
+            };
+
+            img.onerror = reject;
+          } catch (error) {
+            reject(error);
+          }
+        });
+      }
+
+      async function genImage() {
+        try {
+          const canvasImg = await renderFlagToDataUrl();
+          const existingImg = document.querySelector("#bandeiraImg");
+          if (existingImg) {
+            existingImg.remove();
+          }
+
+          const imgToShow = document.createElement("img");
+          imgToShow.id = "bandeiraImg";
+          imgToShow.width = 1200;
+          imgToShow.height = 600;
+          imgToShow.setAttribute("src", canvasImg);
+          document.querySelector("body").append(imgToShow);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+
+      async function uploadToR2(imageDataUrl) {
+        const response = await fetch("/api/upload-image", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ image: imageDataUrl }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Falha ao subir imagem para o armazenamento");
+        }
+
+        const payload = await response.json();
+        if (!payload.imageUrl) {
+          throw new Error("Upload não retornou URL da imagem");
+        }
+
+        return payload.imageUrl;
+      }
+
+      async function shareFlag(button) {
+        const shareBtn = button || document.querySelector("[data-action='share']");
+        if (shareBtn) {
+          shareBtn.disabled = true;
+        }
+
+        try {
+          const canvasImg = await renderFlagToDataUrl();
+          const imageUrl = await uploadToR2(canvasImg);
+          const sloganInput = document.querySelector('input[x-model="slogan"]');
+          const sloganText = sloganInput ? sloganInput.value : "Gera Bandeira";
+
+          if (navigator.share) {
+            await navigator.share({
+              title: "Gera Bandeira",
+              text: `Minha bandeira: ${sloganText}`,
+              url: imageUrl,
+            });
+          } else if (navigator.clipboard) {
+            await navigator.clipboard.writeText(imageUrl);
+            alert("URL da imagem copiada para a área de transferência.");
+          } else {
+            window.open(imageUrl, "_blank");
+          }
+        } catch (error) {
+          console.error("Erro ao compartilhar", error);
+          alert("Não foi possível compartilhar agora. Verifique o console para detalhes.");
+        } finally {
+          if (shareBtn) {
+            shareBtn.disabled = false;
+          }
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const shareBtn = document.querySelector("[data-action='share']");
+        if (shareBtn) {
+          shareBtn.addEventListener("click", () => shareFlag(shareBtn));
+        }
+      });
+    </script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --bandeira-fundo: #009440;
+        --bandeira-ouro: #fedf00;
+        --bandeira-ceu: #002776;
+        --bandeira-estrela: #fff;
+      }
+
+      body {
+        background-color: var(--bandeira-fundo);
+      }
+
+      #bandeiraSlogan {
+        fill: var(--bandeira-fundo);
+        font-size: 6.5em;
+        font-family: "Roboto", sans-serif;
+        font-variant: petite-caps;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      #bandeiraFundo {
+        fill: var(--bandeira-fundo);
+      }
+
+      #bandeiraTrapezio {
+        fill: var(--bandeira-ouro);
+      }
+
+      #bandeiraCeu {
+        fill: var(--bandeira-ceu);
+      }
+
+      .bandeira--estrela {
+        fill: var(--bandeira-estrela);
+      }
+
+      .button--wrapper {
+        display: flex;
+        align-items: center;
+        padding: 1rem 1rem;
+        position: absolute;
+      }
+
+      .button--item {
+        display: flex;
+        align-items: center;
+        padding-left: 0.2rem;
+        padding-right: 0.2rem;
+
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+      }
+
+      .button--item img {
+        display: inline-block;
+        border-radius: 50%;
+        background-color: aquamarine;
+        box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+        padding: 5px;
+        height: 30px;
+        width: 30px;
+        z-index: 2;
+        transition: all 0.5s 0.5s ease-in-out;
+      }
+
+      .button--item span {
+        display: block;
+        position: relative;
+        left: -1rem;
+        padding-top: 5px;
+        padding-bottom: 5px;
+        overflow: hidden;
+        width: 0;
+
+        background-color: aqua;
+        border-top-right-radius: 1rem;
+        border-bottom-right-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        transition: all 0.2s ease-in-out;
+      }
+
+      .button--item.show img {
+        background-color: #dcfff7;
+      }
+
+      .button--item.show span {
+        padding-right: 10px;
+        padding-left: 1.5rem;
+        width: auto;
+      }
+
+      .button--reset {
+        border: none;
+        background-color: transparent;
+        cursor: pointer;
+      }
+
+      .modal--wrapper {
+        background-color: #fff;
+        border-top-right-radius: 1rem;
+        border-bottom-right-radius: 1rem;
+        box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        translate: 0;
+        transition: all 0.5s ease-in-out;
+      }
+
+      .modal--wrapper.hidden {
+        translate: -100vw;
+        transition: all 0.5s ease-in-out;
+      }
+
+      .modal--title {
+        padding: 0.8rem 1rem;
+        background-color: var(--bandeira-ceu);
+        color: #fff;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        font-family: sans-serif;
+        letter-spacing: 0.3cap;
+      }
+
+      .modal--body {
+        display: flex;
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      .modal--wrapper input {
+        padding: 0.5rem;
+        width: 100%;
+
+        border: none;
+      }
+
+      @media (orientation: portrait) {
+        #bandeira {
+          height: 80vh;
+          width: 100vw;
+        }
+        .modal--wrapper {
+          top: 10%;
+          position: absolute;
+        }
+      }
+
+      @media (orientation: landscape) {
+        #bandeira {
+          height: 100vh;
+          width: 100vw;
+        }
+      }
+      @media (orientation: landscape) and (max-width: 1024px) {
+        .modal--wrapper {
+          top: 20%;
+          position: absolute;
+        }
+      }
+      @media (orientation: landscape) and (min-width: 1024px) {
+        .modal--wrapper {
+          top: 10%;
+          position: absolute;
+        }
+      }
+    </style>
+  </head>
+  <body x-data="{slogan: 'Ordem e Progresso', showEdit: false}">
+    <header class="button--wrapper">
+      <button
+        class="button--item"
+        x-bind:class="showEdit ? 'button--item show' : 'button--item' "
+        x-on:click="showEdit = ! showEdit"
+      >
+        <img src="edit.svg" alt="edita texto" width="50" height="50" />
+        <span>Editar</span>
+      </button>
+      <button class="button--item" data-share data-action="share" type="button">
+        <img src="share.svg" alt="compartilhar" width="50" height="50" />
+        <span>Compartilhar</span>
+      </button>
+    </header>
+    <svg id="bandeira" viewBox="-2100 -1470 4200 2940">
+      <defs>
+        <path
+          id="i"
+          fill-rule="evenodd"
+          d="M-31.5 0h33a30 30 0 0030-30v-10a30 30 0 00-30-30h-33zm13-13h19a19 19 0 0019-19v-6a19 19 0 00-19-19h-19z"
+        />
+        <path
+          id="j"
+          d="M0 0h63v-13H12v-18h40v-12H12v-14h48v-13H0z"
+          transform="translate(-31.5)"
+        />
+        <path
+          id="l"
+          d="M-26.25 0h52.5v-12h-40.5v-16h33v-12h-33v-11H25v-12h-51.25z"
+        />
+        <path
+          id="k"
+          d="M-31.5 0h12v-48l14 48h11l14-48V0h12v-70H14L0-22l-14-48h-17.5z"
+        />
+        <path
+          id="b"
+          fill-rule="evenodd"
+          d="M0 0a31.5 35 0 000-70A31.5 35 0 000 0m0-13a18.5 22 0 000-44 18.5 22 0 000 44"
+        />
+        <path
+          id="c"
+          fill-rule="evenodd"
+          d="M-31.5 0h13v-26h28a22 22 0 000-44h-40zm13-39h27a9 9 0 000-18h-27z"
+        />
+        <path
+          id="n"
+          d="M-15.75-22C-15.75-15-9-11.5 1-11.5s14.74-3.25 14.75-7.75c0-14.25-46.75-5.25-46.5-30.25C-30.5-71-6-70 3-70s26 4 25.75 21.25H13.5c0-7.5-7-10.25-15-10.25-7.75 0-13.25 1.25-13.25 8.5-.25 11.75 46.25 4 46.25 28.75C31.5-3.5 13.5 0 0 0c-11.5 0-31.55-4.5-31.5-22z"
+        />
+        <use id="o" transform="scale(31.5)" xlink:href="#f" />
+        <use id="p" transform="scale(26.25)" xlink:href="#f" />
+        <use id="r" transform="scale(21)" xlink:href="#f" />
+        <use id="q" transform="scale(15)" xlink:href="#f" />
+        <use id="s" transform="scale(10.5)" xlink:href="#f" />
+        <g id="m">
+          <clipPath id="a">
+            <path d="M-31.5 0v-70h63V0zM0-47v12h31.5v-12z" />
+          </clipPath>
+          <use clip-path="url(#a)" xlink:href="#b" />
+          <path d="M5-35h26.5v10H5z" />
+          <path d="M21.5-35h10V0h-10z" />
+        </g>
+        <g id="h">
+          <use xlink:href="#c" />
+          <path d="M28 0c0-10 0-32-15-32H-6c22 0 22 22 22 32" />
+        </g>
+        <g id="f" class="bandeira--estrela">
+          <g id="e">
+            <path id="d" d="M0-1v1h.5" transform="rotate(18 0 -1)" />
+            <use transform="scale(-1 1)" xlink:href="#d" />
+          </g>
+          <use transform="rotate(72)" xlink:href="#e" />
+          <use transform="rotate(-72)" xlink:href="#e" />
+          <use transform="rotate(144)" xlink:href="#e" />
+          <use transform="rotate(216)" xlink:href="#e" />
+        </g>
+      </defs>
+      <rect id="bandeiraFundo" width="100%" height="100%" x="-50%" y="-50%" />
+      <path id="bandeiraTrapezio" d="M-1743 0L0 1113 1743 0 0-1113z" />
+      <circle id="bandeiraCeu" r="735" />
+      <clipPath id="g">
+        <circle r="735" />
+      </clipPath>
+      <path
+        class="bandeira--estrela"
+        d="M-2205 1470a1785 1785 0 013570 0h-105a1680 1680 0 10-3360 0z"
+        clip-path="url(#g)"
+      />
+      <use x="-600" y="-132" xlink:href="#o" />
+      <use x="-535" y="177" xlink:href="#o" />
+      <use x="-625" y="243" xlink:href="#p" />
+      <use x="-463" y="132" xlink:href="#q" />
+      <use x="-382" y="250" xlink:href="#p" />
+      <use x="-404" y="323" xlink:href="#r" />
+      <use x="228" y="-228" xlink:href="#o" />
+      <use x="515" y="258" xlink:href="#o" />
+      <use x="617" y="265" xlink:href="#r" />
+      <use x="545" y="323" xlink:href="#p" />
+      <use x="368" y="477" xlink:href="#p" />
+      <use x="367" y="551" xlink:href="#r" />
+      <use x="441" y="419" xlink:href="#r" />
+      <use x="500" y="382" xlink:href="#p" />
+      <use x="365" y="405" xlink:href="#r" />
+      <use x="-280" y="30" xlink:href="#p" />
+      <use x="200" y="-37" xlink:href="#r" />
+      <use y="330" xlink:href="#o" />
+      <use x="85" y="184" xlink:href="#p" />
+      <use y="118" xlink:href="#p" />
+      <use x="-74" y="184" xlink:href="#r" />
+      <use x="-37" y="235" xlink:href="#q" />
+      <use x="220" y="495" xlink:href="#p" />
+      <use x="283" y="430" xlink:href="#r" />
+      <use x="162" y="412" xlink:href="#r" />
+      <use x="-295" y="390" xlink:href="#o" />
+      <use y="575" xlink:href="#s" />
+      <path
+        id="textcurve"
+        fill="none"
+        stroke="none"
+        stroke-width="5.8333"
+        d="m -713.21966,-201.29945 c 562.307,-86.12035 1021.54857,75.76051 1412.11687,402.8864"
+      />
+      <text id="bandeiraSlogan" x="0">
+        <textPath
+          xlink:href="#textcurve"
+          startOffset="50%"
+          text-anchor="middle"
+          x-text="slogan.toUpperCase()"
+        />
+      </text>
+    </svg>
+    <section
+      x-bind:class="! showEdit ? 'modal--wrapper hidden' : 'modal--wrapper'"
+    >
+      <h2 class="modal--title">Digite o novo slogan</h2>
+      <div class="modal--body">
+        <input
+          type="text"
+          x-model="slogan"
+          placeholder="Digite o novo slogan aqui"
+        />
+        <button
+          x-on:click="slogan = 'Ordem e Progresso'; showEdit = false"
+          title="Resetar o padrão"
+          class="button--reset"
+        >
+          <img src="close.svg" alt="Resetar slogan" height="20" width="20" />
+        </button>
+      </div>
+    </section>
+  </body>
+</html>
