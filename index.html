@@ -143,6 +143,13 @@
         }, 2500);
       }
 
+      function downloadImage(dataUrl) {
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = "bandeira.png";
+        link.click();
+      }
+
       async function genImage() {
         try {
           const canvasImg = await renderFlagToDataUrl();
@@ -194,18 +201,32 @@
           const canvasImg = await renderFlagToDataUrl();
           const blob = dataUrlToBlob(canvasImg);
 
-          if (navigator.clipboard && window.ClipboardItem) {
-            await navigator.clipboard.write([
-              new ClipboardItem({ "image/png": blob }),
-            ]);
-            showCopyPill();
-          } else {
-            const link = document.createElement("a");
-            link.href = canvasImg;
-            link.download = "bandeira.png";
-            link.click();
-            alert("Copiar imagem não é suportado; baixei o arquivo para você.");
+          const canWriteImage = navigator.clipboard && window.ClipboardItem;
+
+          if (canWriteImage) {
+            try {
+              await navigator.clipboard.write([
+                new ClipboardItem({ "image/png": blob }),
+              ]);
+              showCopyPill();
+              return;
+            } catch (error) {
+              if (
+                error?.name === "NotAllowedError" ||
+                error?.name === "SecurityError"
+              ) {
+                downloadImage(canvasImg);
+                alert(
+                  "Seu navegador não permitiu copiar a imagem; baixei o arquivo para você."
+                );
+                return;
+              }
+              throw error;
+            }
           }
+
+          downloadImage(canvasImg);
+          alert("Copiar imagem não é suportado; baixei o arquivo para você.");
         } catch (error) {
           console.error("Erro ao copiar", error);
           alert(
