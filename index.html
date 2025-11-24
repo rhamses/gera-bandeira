@@ -112,6 +112,18 @@
         return new Blob([buffer], { type: mime });
       }
 
+      let copyPillTimeout;
+
+      function showCopyPill() {
+        const pill = document.getElementById("copyPill");
+        if (!pill) return;
+        pill.classList.add("is-visible");
+        clearTimeout(copyPillTimeout);
+        copyPillTimeout = setTimeout(() => {
+          pill.classList.remove("is-visible");
+        }, 2500);
+      }
+
       async function genImage() {
         try {
           const canvasImg = await renderFlagToDataUrl();
@@ -167,6 +179,7 @@
             await navigator.clipboard.write([
               new ClipboardItem({ "image/png": blob }),
             ]);
+            showCopyPill();
           } else {
             const link = document.createElement("a");
             link.href = canvasImg;
@@ -415,6 +428,31 @@
           position: absolute;
         }
       }
+
+      .pill {
+        position: fixed;
+        right: 1.5rem;
+        bottom: 1.5rem;
+        padding: 0.75rem 1.25rem;
+        background: var(--bandeira-ceu);
+        color: #fff;
+        border-radius: 999px;
+        font-family: sans-serif;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+        opacity: 0;
+        transform: translateY(12px);
+        pointer-events: none;
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        z-index: 10;
+      }
+
+      .pill.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
     </style>
   </head>
   <body x-data="{slogan: 'Ordem e Progresso', showEdit: false}">
@@ -576,5 +614,8 @@
         </button>
       </div>
     </section>
+    <div id="copyPill" class="pill" role="status" aria-live="polite">
+      imagem copiada para a area de transferencia
+    </div>
   </body>
 </html>
