@@ -307,6 +307,13 @@
         background-color: var(--bandeira-fundo);
       }
 
+      #bandeira {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh;
+      }
+
       #bandeiraSlogan {
         fill: var(--bandeira-fundo);
         font-size: 6.5em;
@@ -519,7 +526,15 @@
         <span>Compartilhar</span>
       </button>
     </header>
-    <svg id="bandeira" viewBox="-2100 -1470 4200 2940">
+    <svg
+      id="bandeira"
+      viewBox="-2100 -1470 4200 2940"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      aria-label="Bandeira do Brasil"
+    >
       <defs>
         <path
           id="i"
